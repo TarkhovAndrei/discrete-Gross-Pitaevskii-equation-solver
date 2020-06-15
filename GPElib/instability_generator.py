@@ -1,29 +1,29 @@
 '''
-Copyright <2017> <Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
-https://github.com/TarkhovAndrei/DGPE>
+Copyright <2019> <Andrei E. Tarkhov, Skolkovo Institute of Science and Technology, https://github.com/TarkhovAndrei/DGPE>
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the following 2 conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following 2 conditions:
 
-1) If any part of the present source code is used for any purposes followed by publication of obtained results,
-the citation of the present code shall be provided according to the rule:
+1) If any part of the present source code is used for any purposes with subsequent publication of obtained results,
+the GitHub repository shall be cited in all publications, according to the citation rule:
+	"Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
+	 source code from the GitHub repository https://github.com/TarkhovAndrei/DGPE, 2019."
 
-    "Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
-    source code from the GitHub repository https://github.com/TarkhovAndrei/DGPE
-    was used to obtain the presented results, 2017."
+2) The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2) The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 '''
-
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from .two_trajs_generator import TwoTrajsGenerator
@@ -40,34 +40,34 @@ class InstabilityGenerator(TwoTrajsGenerator):
 
 	def run_dynamics(self):
 		TwoTrajsGenerator.run_dynamics(self)
+		self.X1 = self.X.copy()
+		self.Y1 = self.Y.copy()
+		self.RHO1 = self.RHO.copy()
+		self.THETA1 = self.THETA.copy()
+
 		if self.perturb_hamiltonian:
-			x1, y1 = self.X[:,:,:,-1], self.Y[:,:,:,-1]
+			x1, y1 = self.X[:,:,:,self.n_steps-1], self.Y[:,:,:,self.n_steps-1]
 		else:
-			x1, y1 = self.constant_perturbation_XY(self.X[:,:,:,-1],self.Y[:,:,:,-1])
-		self.set_init_XY(self.X[:,:,:,0], self.Y[:,:,:,0], x1, y1)
+			x1, y1 = self.constant_perturbation_XY(self.X[:,:,:,self.n_steps-1].copy(),self.Y[:,:,:,self.n_steps-1].copy())
+
+		self.set_init_XY(x1, y1, self.X[:,:,:,0], self.Y[:,:,:,0])
+
 		self.reverse_hamiltonian(self.error_J, self.error_beta, self.error_disorder)
-		for i in xrange(1, self.n_steps):
-			if (np.any((self.RHO1[:,:,:,i-1] ** 2) < self.threshold_XY_to_polar)):
-				psi1 = self.rk4_step_exp_XY(np.hstack((self.X1[:,:,:,i-1].flatten(), self.Y1[:,:,:,i-1].flatten())))
-				self.X1[:,:,:,i] = psi1[:self.N_wells].reshape(self.N_tuple)
-				self.Y1[:,:,:,i] = psi1[self.N_wells:].reshape(self.N_tuple)
-				self.RHO1[:,:,:,i], self.THETA1[:,:,:,i] = self.from_XY_to_polar(self.X1[:,:,:,i], self.Y1[:,:,:,i])
-				# self.X1[:,:,:,i], self.Y1[:,:,:,i] = self.from_polar_to_XY(self.RHO1[:,:,:,i], self.THETA1[:,:,:,i])
-			else:
-				psi1 = self.rk4_step_exp(np.hstack((self.RHO1[:,:,:,i-1].flatten(), self.THETA1[:,:,:,i-1].flatten())))
-				self.RHO1[:,:,:,i] = psi1[:self.N_wells].reshape(self.N_tuple)
-				self.THETA1[:,:,:,i] = psi1[self.N_wells:].reshape(self.N_tuple)
-				self.X1[:,:,:,i], self.Y1[:,:,:,i] = self.from_polar_to_XY(self.RHO1[:,:,:,i], self.THETA1[:,:,:,i])
+		TwoTrajsGenerator.run_dynamics(self)
 		self.reverse_hamiltonian(self.error_J, self.error_beta, self.error_disorder)
+
 		idx = np.arange(self.n_steps)[::-1]
-		self.distance = self.calc_traj_shift_matrix_cartesian_XY(self.X, self.Y, self.X1[:,:,:,idx], self.Y1[:,:,:,idx])
-		self.set_constants_of_motion()
-		self.calculate_polarisation()
-		if (np.abs(np.max(np.abs(self.energy - self.E_calibr)) / self.E_calibr) > 0.01) or (np.abs(np.max(np.abs(self.energy1 - self.E_calibr)) / self.E_calibr) > 0.01):
-			self.make_exception('Energy is not conserved during the dynamics\n')
-		if (np.abs(np.max(np.abs(self.number_of_particles - self.N_part)) / self.N_part) > 0.01) or (np.abs(np.max(np.abs(self.number_of_particles1 - self.N_part)) / self.N_part) > 0.01):
-			self.make_exception('Number of particles is not conserved during the dynamics\n')
-		self.calculate_lambdas()
+		# idx = np.arange(self.X1.shape[-1])[::-1]
+		self.distance = self.calc_traj_shift_matrix_cartesian_XY(self.X[:,:,:,idx], self.Y[:,:,:,idx],
+																 self.X1[:,:,:,idx[::-1]], self.Y1[:,:,:,idx[::-1]])
+
+		# self.set_constants_of_motion()
+		# self.calculate_polarisation()
+		# if (np.abs(np.max(np.abs(self.energy - self.E_calibr)) / self.E_calibr) > 0.01) or (np.abs(np.max(np.abs(self.energy1 - self.E_calibr)) / self.E_calibr) > 0.01):
+		# 	self.make_exception('Energy is not conserved during the dynamics\n')
+		# if (np.abs(np.max(np.abs(self.number_of_particles - self.N_part)) / self.N_part) > 0.01) or (np.abs(np.max(np.abs(self.number_of_particles1 - self.N_part)) / self.N_part) > 0.01):
+		# 	self.make_exception('Number of particles is not conserved during the dynamics\n')
+		# self.calculate_lambdas()
 
 	def calculate_polarisation(self):
 		self.polarisation = np.sum(self.X, axis=(0,1,2))

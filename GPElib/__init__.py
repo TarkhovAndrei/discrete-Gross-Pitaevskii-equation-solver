@@ -1,5 +1,5 @@
 '''
-Copyright <2017> <Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
+Copyright <2019> <Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
 https://github.com/TarkhovAndrei/DGPE>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
@@ -12,7 +12,7 @@ the citation of the present code shall be provided according to the rule:
 
     "Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
     source code from the GitHub repository https://github.com/TarkhovAndrei/DGPE
-    was used to obtain the presented results, 2017."
+    was used to obtain the presented results, 2019."
 
 2) The above copyright notice and this permission notice shall be included in all copies or
 substantial portions of the Software.

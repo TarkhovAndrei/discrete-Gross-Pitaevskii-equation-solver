@@ -1,17 +1,46 @@
-# A solver for the discrete Gross-Pitaevskii equation in one, two and three dimensions
+# A solver for the Gross-Pitaevskii equation on a one-, two- or three- dimensional lattice
 
-A tool for modelling of the system of coupled Bose-Einstein condensates on a lattice with periodic boundary conditions in 1D, 2D and 3D.
+A tool for modelling the system of coupled Bose-Einstein condensates on a lattice with periodic boundary conditions in 1D, 2D and 3D.
 
-A Runge-Kutta 4th order algorithm is employed. Quadrupole precision numbers are used for all calculations. 
+In addition, the code includes:
 
-The standard routine for the largest Lyapunov exponent calculation is implemented, 
-as well as a custom Loschmidt echo (imperfect time-reversal) routine, for the lattice of coupled Bose-Einstein condensates.
+1) The standard routine for calculating the largest Lyapunov exponent.
 
-The code was used for obtaining numerical results for the paper:
-Andrei E. Tarkhov, Sandro Wimberger, and Boris V. Fine, Phys. Rev. A 96, 023624 (2017), https://doi.org/10.1103/PhysRevA.96.023624
+2) A custom imperfect time-reversal routine ([Loschmidt echo](http://www.scholarpedia.org/article/Loschmidt_echo)).
+
+3) A custom routine for estimating the typical temperature on a chosen energy shell from conservative dynamics. 
+
+4) Non-conservative quenching terms;
+    1) Driving the system to a pre-set energy.
+    2) Driving the system according to a pre-set energy-drain profile.
+
+5) Disorder of several kinds:
+    1) A local symmetry breaking disorder field (linear in \psi). 
+    2) Disorder in the local chemical potential (preserves symmetry, proportional to \asb(\psi^2)).
+    3) Disorder in the on-site interaction term (preserves symmetry, proportional to \asb(\psi^4)).
+
+## Numerical integration algorithms used
+
+The dopri45 Runge-Kutta with adaptive time-step (parallelized on CPUs and GPUs versions) support only double precision numbers, and a custom 4-th order Runge-Kutta algorithm with a fixed time step are employed. The custom code supports quadrupole precision floats for exact Lyapunov exponents calculations.
+
+## CPU Parallelization
+
+The code supports OpenMP parallelization on multicore CPUs via [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) solver.
+
+## CPU Parallelization
+
+The code supports GPU parallelization on NVIDIA GPUs via PyTorch + [torchdiffeq](https://github.com/rtqichen/torchdiffeq) solver.
+
+## For citation
+
+The code was used for obtaining numerical results for the papers:
+
+1) [Andrei E. Tarkhov, Sandro Wimberger, and Boris V. Fine, _Phys. Rev. A_ **96**, 023624 (2017)](https://doi.org/10.1103/PhysRevA.96.023624)
+
+2) [Andrei E. Tarkhov, Boris V. Fine, _New J. Phys._ **20** 123021 (2018)](https://doi.org/10.1088/1367-2630/aaf0b6)
 
 -----------------------------------------
-Copyright <2017> <Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
+Copyright <2019> <Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
 https://github.com/TarkhovAndrei/DGPE>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
@@ -24,7 +53,7 @@ the citation of the present code shall be provided according to the rule:
 
     "Andrei E. Tarkhov, Skolkovo Institute of Science and Technology,
     source code from the GitHub repository https://github.com/TarkhovAndrei/DGPE
-    was used to obtain the presented results, 2017."
+    was used to obtain the presented results, 2019."
 
 2) The above copyright notice and this permission notice shall be included in all copies or
 substantial portions of the Software.
